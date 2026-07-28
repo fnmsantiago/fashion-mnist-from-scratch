@@ -32,16 +32,20 @@ class NeuralNetwork:
             A dict with keys 'W1', 'b1', ..., 'WL', 'bL'.
         """
 
-        for l in range(1, self.num_layers):
+        self.parameters = {}
+
+        for l in range(1, self.num_layers + 1):
             curr_neurons = self.layer_dims[l]
             prev_neurons = self.layer_dims[l-1]
 
             he_multiplier = np.sqrt(2/prev_neurons)
-            
+
             l = str(l)
 
             self.parameters["W"+l] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
-            self.parameters["b"+l] = np.random.zeros(curr_neurons, 1)
+            self.parameters["b"+l] = np.zeros(curr_neurons, 1)
+
+            return self.parameters
 
         
     def forward(self, x: np.ndarray) -> Tuple[np.ndarray, list]:
