@@ -31,9 +31,19 @@ class NeuralNetwork:
         Returns:
             A dict with keys 'W1', 'b1', ..., 'WL', 'bL'.
         """
-        # TODO: implement
-        pass
 
+        for l in range(1, self.num_layers):
+            curr_neurons = self.layer_dims[l]
+            prev_neurons = self.layer_dims[l-1]
+
+            he_multiplier = np.sqrt(2/prev_neurons)
+            
+            l = str(l)
+
+            self.parameters["W"+l] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
+            self.parameters["b"+l] = np.random.zeros(curr_neurons, 1)
+
+        
     def forward(self, x: np.ndarray) -> Tuple[np.ndarray, list]:
         """Runs a forward pass through the network.
 
