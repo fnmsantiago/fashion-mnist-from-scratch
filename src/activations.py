@@ -10,8 +10,7 @@ def relu(z: np.ndarray) -> np.ndarray:
     Returns:
         Post-activation values, same shape as z.
     """
-    # TODO: implement
-    pass
+    return max(0,z)
 
 
 def relu_backward(da: np.ndarray, z: np.ndarray) -> np.ndarray:
@@ -25,8 +24,7 @@ def relu_backward(da: np.ndarray, z: np.ndarray) -> np.ndarray:
     Returns:
         Gradient of the cost with respect to z.
     """
-    # TODO: implement
-    pass
+    return int(z < 0)
 
 
 def softmax(z: np.ndarray) -> np.ndarray:

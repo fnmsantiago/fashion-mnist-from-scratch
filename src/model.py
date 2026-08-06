@@ -61,8 +61,19 @@ class NeuralNetwork:
         """
         # Hidden layers 1..L-1: linear -> relu
         # Output layer L: linear -> softmax
-        # TODO: implement
-        pass
+        for l in range(1, self.num_layers + 1):
+            w = self.parameters["W" + str(l)]
+            b = self.parameters["b" + str(l)]
+
+            z = np.dot(w, x) + b
+
+            if l == self.num_layers:
+                al = softmax(z)
+            else:
+                al = relu(z)
+
+            caches.append((x, w, b, z))
+            x = al
 
     def compute_cost(self, al: np.ndarray, y: np.ndarray) -> float:
         """Computes the cost for a batch of predictions.
