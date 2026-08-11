@@ -37,7 +37,7 @@ def softmax(z: np.ndarray) -> np.ndarray:
     Returns:
         Softmax probabilities of shape (n_classes, m); each column sums to 1.
     """
-    # Hint: subtract the column-wise max from z before exponentiating, for
-    # numerical stability -- this doesn't change the result.
-    # TODO: implement
-    pass
+    # apply numerical stability by subtracting the max of each column (sample)
+    z_shifted = z - np.max(z, axis=0, keepdims=True)
+    exp_z = np.exp(z_shifted)
+    return exp_z / np.sum(exp_z, axis=0, keepdims=True)
