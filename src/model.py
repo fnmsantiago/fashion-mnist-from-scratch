@@ -3,7 +3,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 
 from .activations import relu, relu_backward, softmax
-from .losses import categorical_cross_entropy
+from .losses import categorical_cross_entropy_cost
 from .utils import one_hot_encode, random_mini_batches
 
 
