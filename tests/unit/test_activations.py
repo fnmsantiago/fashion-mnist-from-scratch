@@ -10,7 +10,6 @@ Run a single test by name:
     pytest tests/unit/test_activations.py::test_relu_positive_values -v
 """
 import numpy as np
-import pytest
 
 from src.activations import relu, relu_backward, softmax
 
@@ -80,7 +79,7 @@ def test_softmax_columns_sum_to_one():
     z = np.random.randn(3, 5)
     a = softmax(z)
 
-    expected = np.ones((1,5))
+    expected = np.ones((1, 5))
     np.testing.assert_allclose(a.sum(axis=0, keepdims=True), expected)
 
 def test_softmax_preserves_input_shape():
