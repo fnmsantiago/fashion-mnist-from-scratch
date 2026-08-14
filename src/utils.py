@@ -65,9 +65,22 @@ def one_hot_encode(y: np.ndarray, n_classes: int) -> np.ndarray:
     Returns:
         One-hot encoded labels of shape (n_classes, m).
     """
-    # TODO: implement
-    pass
+    # m is the number of samples to encode.
+    m = y.shape[0]
 
+    encoded = np.zeros((n_classes, m))
+
+    # For example: y = [3, 7, 5, 1, 0]
+    rows = y
+
+    # Makes: columns = [0, 1, ..., m-1]
+    columns = np.arange(m)
+
+    # Set all row-column coordinates dictated by `rows` and `columns` to 1.
+    # For example: (3, 0) is set to 1. As is, (7, 1).  
+    encoded[rows, columns] = 1
+
+    return encoded
 
 def random_mini_batches(
     x: np.ndarray, y: np.ndarray, batch_size: int = 64, seed: int = 0
