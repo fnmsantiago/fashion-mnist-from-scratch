@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
+import math
 
 CLASS_NAMES = [
     'T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
@@ -98,7 +99,32 @@ def random_mini_batches(
         A list of (x_batch, y_batch) tuples. The last batch may be smaller
         than batch_size.
     """
-    # Hint: shuffle the m columns of x and y together, then slice into
-    # chunks of batch_size.
-    # TODO: implement
-    pass
+    np.random.seed(seed)
+
+    mini_batches = []
+
+    m = x.shape[1]
+
+    shuffled_indexes = list(np.random.permutation(m))
+
+    shuffled_x = x[:,shuffled_indexes]
+    shuffled_y = y[:,shuffled_indexes]
+
+    count_full_minibatches = math.floor(m/batch_size)
+
+    for k in range(0, count_full_minibatches):
+
+        start = k * batch_size
+        end = start + batch_size
+
+        mini_batch = (shuffled_x[:, start:end], shuffled_y[:, start:end])
+        mini_batches.append(mini_batch)
+
+    # Handle the remainder, partial mini_batch
+    remainder = m % batch_size
+
+    if remainder != 0:
+        mini_batch = (shuffled_x[:, -remainder:], shuffled_y[:, -remainder:])
+        mini_batches.append(mini_batch)
+
+    return mini_batches
