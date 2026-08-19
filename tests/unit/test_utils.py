@@ -75,7 +75,6 @@ def test_consecutive_labels_form_the_identity_matrix():
 
 def test_full_batches_plus_one_partial_batch():
     """Samples must split into full-size batches, with leftovers as a final batch."""
-    # Goal: verify the contract's core promise about batch sizes.
     batch_size = 10
     m = 14
 
@@ -90,9 +89,6 @@ def test_full_batches_plus_one_partial_batch():
 
 def test_all_samples_survive_the_shuffle():
     """Every original sample must appear exactly once across all batches."""
-    # Goal: shuffling is a permutation, not a filter. The data itself carries
-    # each sample's identity, so the reassembled set can be checked in ANY
-    # order — no need to know the internal permutation.
     m = 10
     batch_size = 4
     seed = 1234
@@ -124,41 +120,117 @@ def test_all_samples_survive_the_shuffle():
     np.testing.assert_allclose(np.sort(ids_x), brands)
     np.testing.assert_allclose(np.sort(ids_y), brands)
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
 def test_x_and_y_columns_stay_paired():
     """Each sample's features and its labels must never be separated."""
-    # Goal: this is the whole point of one shared shuffle.
-    # Hint: make each sample's label a deterministic function of its own x
-    # column (encode the column identity into both). After batching, derive
-    # each x_batch's labels from x and compare against the matching y_batch.
-    # TODO: replace `pass` with real assertions
-    pass
+    m = 10
+    x = np.zeros((3, m))
+    y = np.zeros((1, m))
+    batch_size = 4
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+    # Brand the samples and labels with the same id, using their original index.
+    brands = np.arange(m)
+    x[0] = brands
+    y[0] = brands
+
+    mini_batches = random_mini_batches(x, y,  batch_size)
+
+    # Retrieve only the 1st row from each minibatch, as they contain the ids.
+    brand_rows_x = [x_batch[0] for x_batch, _ in mini_batches]
+    brand_rows_y = [y_batch[0] for _, y_batch in mini_batches]
+
+    # Concatenate each sub list to form a single Numpy.
+    ids_x = np.concatenate(brand_rows_x)
+    ids_y = np.concatenate(brand_rows_y)
+
+    # If the sample and label pair were properly batched together,
+    # then both Numpy arrays must be identical.
+    np.testing.assert_allclose(ids_x, ids_y)
+
 def test_same_seed_reproduces_the_same_batches():
     """Two calls with the same seed must return identical batches."""
-    # Goal: determinism is what makes seeded shuffling reproducible.
-    # Hint: call the function twice with the same seed. What comparison would
-    # show the two results are literally the same, batch by batch?
-    # TODO: replace `pass` with real assertions
-    pass
+    m = 10
+    batch_size = 5
 
+    x = np.random.randn(3, m)
+    y = np.random.randn(1, m)
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+    batch_seed = 1234
+
+    # The function returns a list of (x_batch, y_batch) tuples, not a single
+    # array, so compare the two sequences element by element, in order.
+    batches_1 = random_mini_batches(x, y, batch_size, batch_seed)
+    batches_2 = random_mini_batches(x, y, batch_size, batch_seed)
+
+    # Same seed means the two lists must have the same number of batches.
+    assert len(batches_1) == len(batches_2)
+
+    # Pair the elements with the same index together using zip and compare.
+    for (x_batch_1, y_batch_1), (x_batch_2, y_batch_2) in zip(batches_1, batches_2):
+        np.testing.assert_allclose(x_batch_1, x_batch_2)
+        np.testing.assert_allclose(y_batch_1, y_batch_2)
+
 def test_different_seeds_reshuffle_the_order():
     """A different seed must change the order while keeping every sample."""
-    # Goal: passing a fresh seed per epoch is what reshuffles the data.
-    # Hint: compare batches produced from two different seeds. The column
-    # order should differ — yet coverage and pairing must still hold.
-    # TODO: replace `pass` with real assertions
-    pass
+    m = 10
+    batch_size = 5
 
+    x = np.random.randn(3, m)
+    y = np.random.randn(1, m)
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+    brand = np.arange(m)
+    x[0] = brand
+    y[0] = brand
+
+    batch_seed_1 = 1234
+    batch_seed_2 = 5678
+
+    batches_1 = random_mini_batches(x, y, batch_size, batch_seed_1)
+    batches_2 = random_mini_batches(x, y, batch_size, batch_seed_2)
+
+    ids_x_1 = np.concatenate([x_batch[0] for x_batch, _ in batches_1])
+    ids_y_1 = np.concatenate([y_batch[0] for _, y_batch in batches_1])
+
+    ids_x_2 = np.concatenate([x_batch[0] for x_batch, _ in batches_2])
+    ids_y_2 = np.concatenate([y_batch[0] for _, y_batch in batches_2])
+
+    # Different seeds should've produced different orders.
+    assert not np.array_equal(ids_x_1, ids_x_2)
+    assert not np.array_equal(ids_y_1, ids_y_2)
+
+    # Retains all samples.
+    assert ids_x_1.shape[0] == m
+    assert ids_y_1.shape[0] == m
+    assert ids_x_2.shape[0] == m
+    assert ids_y_2.shape[0] == m
+
+    # Retains sample-label pairings.
+    np.testing.assert_allclose(ids_x_1, ids_y_1)
+    np.testing.assert_allclose(ids_x_2, ids_y_2)
+
 def test_large_batch_size_still_covers_all_samples():
     """A batch_size bigger than m must still return usable batches."""
-    # Goal: an edge case — nothing should break or go missing.
-    # Hint: call with a batch_size larger than the number of samples. How
-    # many batches come back, and does every sample still appear?
-    # TODO: replace `pass` with real assertions
-    pass
+    m = 10
+    batch_size = 15
+
+    # Brand each sample with its original index so the content check can
+    # catch dropped samples, not just zero-filled placeholders.
+    brands = np.arange(m)
+    x = np.zeros((3, m))
+    x[0] = brands
+    y = np.zeros((1, m))
+    y[0] = brands
+
+    mini_batches = random_mini_batches(x, y, batch_size)
+
+    # Only 1 batch should've been created.
+    assert len(mini_batches) == 1
+
+    x_batch = mini_batches[0][0]
+    y_batch = mini_batches[0][1]
+
+    # All samples/labels retained — every brand appears exactly once.
+    np.testing.assert_allclose(np.sort(x_batch[0]), brands)
+    np.testing.assert_allclose(np.sort(y_batch[0]), brands)
+
+    # Sample-label pairings are still intact inside the batch.
+    np.testing.assert_allclose(x_batch[0], y_batch[0])
