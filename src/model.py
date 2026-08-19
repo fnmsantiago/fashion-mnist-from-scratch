@@ -45,7 +45,7 @@ class NeuralNetwork:
             self.parameters["W"+l] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
             self.parameters["b"+l] = np.zeros((curr_neurons, 1))
 
-            return self.parameters
+        return self.parameters
 
         
     def forward(self, x: np.ndarray) -> Tuple[np.ndarray, list]:
