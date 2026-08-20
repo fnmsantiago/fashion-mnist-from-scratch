@@ -7,6 +7,11 @@ from .losses import categorical_cross_entropy_cost
 from .utils import one_hot_encode, random_mini_batches
 
 
+# A layer's cached values from forward() that backward() needs:
+# the input activations, weight matrix, bias, and pre-activation z.
+LayerCache = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+
+
 class NeuralNetwork:
     """An L-layer fully-connected network for multi-class classification.
 
@@ -48,7 +53,7 @@ class NeuralNetwork:
         return self.parameters
 
         
-    def forward(self, x: np.ndarray) -> Tuple[np.ndarray, list]:
+    def forward(self, x: np.ndarray) -> Tuple[np.ndarray, Dict[int, LayerCache]]:
         """Runs a forward pass through the network.
 
         Args:
@@ -56,24 +61,38 @@ class NeuralNetwork:
 
         Returns:
             A tuple (al, caches) where al is the softmax output of shape
-            (n_classes, m) and caches holds whatever intermediate values
-            backward() needs.
+            (n_classes, m) and caches is a dict keyed by layer index 1..L,
+            each value being that layer's (a_prev, W, b, z) tuple for the
+            values backward() needs.
         """
+        # Each layer's cache gets its own entry, keyed by layer index.
+        caches: Dict[int, LayerCache] = {}
+
         # Hidden layers 1..L-1: linear -> relu
         # Output layer L: linear -> softmax
+        a_prev = x
+
         for l in range(1, self.num_layers + 1):
-            w = self.parameters["W" + str(l)]
+            W = self.parameters["W" + str(l)]
             b = self.parameters["b" + str(l)]
 
-            z = np.dot(w, x) + b
+            # Pre-activation
+            z = np.dot(W, a_prev) + b
 
+            # Activation
             if l == self.num_layers:
-                al = softmax(z)
+                a = softmax(z)
             else:
-                al = relu(z)
+                a = relu(z)
 
-            caches.append((x, w, b, z))
-            x = al
+            # Cache necessities for backpropagation.
+            caches[l] = (a_prev, W, b, z)
+
+            # Forward
+            a_prev = a
+
+        # Return the prediction and the caches backward will need.
+        return (a, caches)
 
     def compute_cost(self, al: np.ndarray, y: np.ndarray) -> float:
         """Computes the cost for a batch of predictions.
@@ -89,14 +108,15 @@ class NeuralNetwork:
         pass
 
     def backward(
-        self, al: np.ndarray, y: np.ndarray, caches: list
+        self, al: np.ndarray, y: np.ndarray, caches: Dict[int, LayerCache]
     ) -> Dict[str, np.ndarray]:
         """Runs backpropagation and returns the parameter gradients.
 
         Args:
             al: Softmax output of shape (n_classes, m).
             y: One-hot labels of shape (n_classes, m).
-            caches: Intermediate values produced by forward().
+            caches: Dict keyed by layer index 1..L produced by forward();
+                each value is that layer's (a_prev, W, b, z) tuple.
 
         Returns:
             A dict with keys 'dW1', 'db1', ..., 'dWL', 'dbL'.
