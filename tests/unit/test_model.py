@@ -128,34 +128,60 @@ def test_hidden_activations_are_non_negative():
 
         assert (a_prev >= 0).all()
  
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
 def test_caches_have_one_four_tuple_per_layer():
     """caches must hold exactly L entries, one (a_prev, W, b, z) per layer."""
-    # Goal: locks the custom cache contract backward() will rely on.
-    # Hint: forward a batch through a [4, 3, 2] network. How many layer keys
-    # should caches have? What should each key's value look like — a tuple of
-    # how many arrays? Check both the key count and the value lengths.
-    # TODO: replace `pass` with real assertions
-    pass
+    layer_dims = [40, 30, 10]
 
+    nn = NeuralNetwork(layer_dims)
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+    m = 12
+    x = np.random.randn(40, m)
+
+    (aL, caches) = nn.forward(x)
+
+    assert len(caches) == len(layer_dims)-1
+
+    for l in range(1, len(layer_dims)):
+        assert len(caches[l]) == 4 
+
 def test_cache_shapes_link_adjacent_layers():
     """Each layer's cached values must line up with its own and prior dims."""
-    # Goal: the shapes in caches mirror the parameter contract from earlier.
-    # Hint: for layer l, W and b inside its cache should match the W and b in
-    # self.parameters — caches store REFERENCES to the same arrays. And the
-    # cached a_prev should have the shape of layer l-1's output (or the input
-    # size for layer 1). Compare against layer_dims directly.
-    # TODO: replace `pass` with real assertions
-    pass
+    layer_dims = [40, 30, 10]
+    
+    nn = NeuralNetwork(layer_dims)
 
+    m = 12
+    x = np.random.randn(40, m)
 
-@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+    (aL, caches) = nn.forward(x)
+
+    for l in range(1, len(layer_dims)):
+        # a_prev has correct shape
+        assert caches[l][0].shape == (layer_dims[l-1], m)
+
+        # W has correct shape
+        assert caches[l][1].shape == (layer_dims[l], layer_dims[l-1])
+
+        # b has correct shape
+        assert caches[l][2].shape == (layer_dims[l], 1)
+
+        # z has correct shape
+        assert caches[l][3].shape == (layer_dims[l], m)
+
 def test_forward_is_deterministic():
     """Two calls with the same weights and input must give identical al."""
     # Goal: forward() carries no hidden state — unlike the old self.caches.
     # Hint: call forward twice on the same model and input. The two returned
     # al arrays must be exactly equal. (All random noise lives in init only.)
-    # TODO: replace `pass` with real assertions
-    pass
+    layer_dims = [40, 30, 10]
+    
+    nn = NeuralNetwork(layer_dims)
+
+    m = 12
+    x = np.random.randn(40, m)
+
+    (aL1, caches) = nn.forward(x)
+
+    (aL2, caches) = nn.forward(x)
+
+    np.testing.assert_allclose(aL1, aL2)
