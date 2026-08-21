@@ -5,14 +5,8 @@ Run just this file:
 
 Run every test in the project:
     pytest -v
-
-To finish a skipped test:
-    1. Remove the ``@pytest.mark.skip(...)`` decorator
-    2. Replace the ``pass`` body with real assertions (read the hints)
-    3. Run pytest again and watch that test go from SKIPPED to PASSED
 """
 import numpy as np
-import pytest
 
 from src.utils import one_hot_encode, random_mini_batches
 

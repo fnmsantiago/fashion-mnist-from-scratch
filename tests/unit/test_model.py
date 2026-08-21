@@ -5,14 +5,8 @@ Run just this file:
 
 Run every test in the project:
     pytest -v
-
-To finish a skipped test:
-    1. Remove the ``@pytest.mark.skip(...)`` decorator
-    2. Replace the ``pass`` body with real assertions (read the hints)
-    3. Run pytest again and watch that test go from SKIPPED to PASSED
 """
 import numpy as np
-import pytest
 
 from src.model import NeuralNetwork
 
@@ -41,7 +35,7 @@ def test_parameter_shapes_match_layer_dims():
         # Weight shape should be (node_count_current_layer, node_count_previous_layer)
         assert nn.parameters["W"+str(l)].shape == (layer_dimensions[l], layer_dimensions[l-1])
 
-        # Bias shape should be (node_count_current_layer, node_count_previous_layer)
+        # Bias shape should be (node_count_current_layer, 1)
         assert nn.parameters["b"+str(l)].shape == (layer_dimensions[l], 1)
 
 def test_biases_are_initialized_to_zero():
@@ -127,7 +121,7 @@ def test_hidden_activations_are_non_negative():
         a_prev = caches[l][0]
 
         assert (a_prev >= 0).all()
- 
+
 def test_caches_have_one_four_tuple_per_layer():
     """caches must hold exactly L entries, one (a_prev, W, b, z) per layer."""
     layer_dims = [40, 30, 10]
@@ -142,12 +136,12 @@ def test_caches_have_one_four_tuple_per_layer():
     assert len(caches) == len(layer_dims)-1
 
     for l in range(1, len(layer_dims)):
-        assert len(caches[l]) == 4 
+        assert len(caches[l]) == 4
 
 def test_cache_shapes_link_adjacent_layers():
     """Each layer's cached values must line up with its own and prior dims."""
     layer_dims = [40, 30, 10]
-    
+
     nn = NeuralNetwork(layer_dims)
 
     m = 12
@@ -170,11 +164,8 @@ def test_cache_shapes_link_adjacent_layers():
 
 def test_forward_is_deterministic():
     """Two calls with the same weights and input must give identical al."""
-    # Goal: forward() carries no hidden state — unlike the old self.caches.
-    # Hint: call forward twice on the same model and input. The two returned
-    # al arrays must be exactly equal. (All random noise lives in init only.)
     layer_dims = [40, 30, 10]
-    
+
     nn = NeuralNetwork(layer_dims)
 
     m = 12
