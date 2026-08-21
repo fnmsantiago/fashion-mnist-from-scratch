@@ -68,3 +68,94 @@ def test_weights_follow_he_scale():
 
         # A single weight matrix is a sample, so allow a small tolerance.
         np.testing.assert_allclose(np.std(nn.parameters["W"+str(l)]), expected_std, rtol=0.1)
+
+
+# ---------------------------------------------------------------------------
+# forward() — a pass turns (n_x, m) inputs into (n_classes, m) probabilities
+# ---------------------------------------------------------------------------
+
+def test_forward_output_shape():
+    """Inputs of shape (n_x, m) must come out as (n_classes, m) predictions."""
+    classes_count = 10
+    layer_dims = [4, 3, classes_count]
+
+    nn = NeuralNetwork(layer_dims)
+
+    m = 7
+    x = np.random.randn(4, m)
+
+    (aL, caches) = nn.forward(x)
+
+    assert aL.shape == (classes_count, m)
+
+def test_forward_columns_are_probability_distributions():
+    """Each column of al must sum to 1 with all values in (0, 1]."""
+    n_classes = 10
+    layer_dims = [4, 3, n_classes]
+
+    nn = NeuralNetwork(layer_dims)
+
+    m = 7
+    x = np.random.randn(4, m)
+
+    (aL, caches) = nn.forward(x)
+
+    ones = np.ones((1, m))
+
+    np.testing.assert_allclose(aL.sum(axis=0, keepdims=True), ones)
+
+    lower_limit = np.zeros(aL.shape)
+
+    np.testing.assert_array_less(lower_limit, aL)
+
+    assert (aL <= 1.0).all()
+
+def test_hidden_activations_are_non_negative():
+    """ReLU in the hidden layers means activations can never be negative."""
+    n_features = 20
+    layer_dims = [n_features, 15, 4, 3, 10]
+
+    nn = NeuralNetwork(layer_dims)
+
+    m = 7
+    x = np.random.randn(n_features, m)
+
+    (aL, caches) = nn.forward(x)
+
+    # For each hidden layer, assert that the activation it received is non-negative.
+    for l in range(2, len(layer_dims)):
+        a_prev = caches[l][0]
+
+        assert (a_prev >= 0).all()
+ 
+@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+def test_caches_have_one_four_tuple_per_layer():
+    """caches must hold exactly L entries, one (a_prev, W, b, z) per layer."""
+    # Goal: locks the custom cache contract backward() will rely on.
+    # Hint: forward a batch through a [4, 3, 2] network. How many layer keys
+    # should caches have? What should each key's value look like — a tuple of
+    # how many arrays? Check both the key count and the value lengths.
+    # TODO: replace `pass` with real assertions
+    pass
+
+
+@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+def test_cache_shapes_link_adjacent_layers():
+    """Each layer's cached values must line up with its own and prior dims."""
+    # Goal: the shapes in caches mirror the parameter contract from earlier.
+    # Hint: for layer l, W and b inside its cache should match the W and b in
+    # self.parameters — caches store REFERENCES to the same arrays. And the
+    # cached a_prev should have the shape of layer l-1's output (or the input
+    # size for layer 1). Compare against layer_dims directly.
+    # TODO: replace `pass` with real assertions
+    pass
+
+
+@pytest.mark.skip(reason="TODO: implement this test (remove this decorator first)")
+def test_forward_is_deterministic():
+    """Two calls with the same weights and input must give identical al."""
+    # Goal: forward() carries no hidden state — unlike the old self.caches.
+    # Hint: call forward twice on the same model and input. The two returned
+    # al arrays must be exactly equal. (All random noise lives in init only.)
+    # TODO: replace `pass` with real assertions
+    pass
