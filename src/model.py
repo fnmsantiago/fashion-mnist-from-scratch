@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, NamedTuple, Tuple
 
 import numpy as np
 
@@ -9,8 +9,12 @@ from .utils import one_hot_encode, random_mini_batches
 
 # A layer's cached values from forward() that backward() needs:
 # the input activations, weight matrix, bias, and pre-activation z.
-LayerCache = Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]
-
+class LayerCache(NamedTuple):
+    """The operands and output of a layer's activation."""
+    a_prev: np.ndarray
+    W: np.ndarray
+    b: np.ndarray
+    z: np.ndarray
 
 class NeuralNetwork:
     """An L-layer fully-connected network for multi-class classification.
@@ -84,7 +88,7 @@ class NeuralNetwork:
                 a = relu(z)
 
             # Cache necessities for backpropagation.
-            caches[l] = (a_prev, W, b, z)
+            caches[l] = LayerCache(a_prev, W, b, z)
 
             # Forward
             a_prev = a
@@ -114,7 +118,7 @@ class NeuralNetwork:
             al: Softmax output of shape (n_classes, m).
             y: One-hot labels of shape (n_classes, m).
             caches: Dict keyed by layer index 1..L produced by forward();
-                each value is that layer's (a_prev, W, b, z) tuple.
+                each value is that layer's a_prev, W, b, and z.
 
         Returns:
             A dict with keys 'dW1', 'db1', ..., 'dWL', 'dbL'.
@@ -126,19 +130,24 @@ class NeuralNetwork:
         # Output layer L: softmax + cross-entropy combine into dZ_L = al - y
         # (the softmax Jacobian cancels the log-derivative), so its gradients
         # are computed explicitly before the hidden-layer loop.
-        a_prev, W, _, z = caches[self.num_layers]
-        dZ = al - y
-        gradients[f"dW{self.num_layers}"] = (dZ @ a_prev.T) / m
+        cache = caches[self.num_layers]
+
+        error_signal = al - y
+
+        gradients[f"dW{self.num_layers}"] = (dZ @ cache.a_prev.T) / m
         gradients[f"db{self.num_layers}"] = np.mean(dZ, axis=1, keepdims=True)
-        dA_prev = W.T @ dZ
+        dA_prev = cache.W.T @ error_signal
 
         # Hidden layers L-1..1: uniform linear -> relu backward.
         for l in range(self.num_layers - 1, 0, -1):
-            a_prev, W, _, z = caches[l]
-            dZ = relu_backward(dA_prev, z)
-            gradients[f"dW{l}"] = (dZ @ a_prev.T) / m
-            gradients[f"db{l}"] = np.mean(dZ, axis=1, keepdims=True)
-            dA_prev = W.T @ dZ
+            cache = caches[l]
+            error_signal = relu_backward(dA_prev, cache.z)
+
+            gradients[f"dW{l}"] = (error_signal @ cache.a_prev.T) / m
+            gradients[f"db{l}"] = np.mean(error_signal, axis=1, keepdims=True)
+
+            # Calculate the error signal of the current layer.
+            dA_prev = cache.W.T @ error_signal
 
         return gradients
 
