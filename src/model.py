@@ -45,10 +45,8 @@ class NeuralNetwork:
 
             he_multiplier = np.sqrt(2/prev_neurons)
 
-            l = str(l)
-
-            self.parameters["W"+l] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
-            self.parameters["b"+l] = np.zeros((curr_neurons, 1))
+            self.parameters[f"W{str(l)}"] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
+            self.parameters[f"b{str(l)}"] = np.zeros((curr_neurons, 1))
 
         return self.parameters
 
@@ -73,8 +71,8 @@ class NeuralNetwork:
         a_prev = x
 
         for l in range(1, self.num_layers + 1):
-            W = self.parameters["W" + str(l)]
-            b = self.parameters["b" + str(l)]
+            W = self.parameters[f"W{str(l)}"]
+            b = self.parameters[f"b{str(l)}"]
 
             # Pre-activation
             z = np.dot(W, a_prev) + b
@@ -121,10 +119,28 @@ class NeuralNetwork:
         Returns:
             A dict with keys 'dW1', 'db1', ..., 'dWL', 'dbL'.
         """
-        # Output layer L: dZL = al - y, then propagate to dWL, dbL, dA_prev
-        # Hidden layers L-1..1: linear -> relu backward
-        # TODO: implement
-        pass
+        gradients = {}
+
+        m = al.shape[1]
+
+        # Output layer L: softmax + cross-entropy combine into dZ_L = al - y
+        # (the softmax Jacobian cancels the log-derivative), so its gradients
+        # are computed explicitly before the hidden-layer loop.
+        a_prev, W, _, z = caches[self.num_layers]
+        dZ = al - y
+        gradients[f"dW{self.num_layers}"] = (dZ @ a_prev.T) / m
+        gradients[f"db{self.num_layers}"] = np.mean(dZ, axis=1, keepdims=True)
+        dA_prev = W.T @ dZ
+
+        # Hidden layers L-1..1: uniform linear -> relu backward.
+        for l in range(self.num_layers - 1, 0, -1):
+            a_prev, W, _, z = caches[l]
+            dZ = relu_backward(dA_prev, z)
+            gradients[f"dW{l}"] = (dZ @ a_prev.T) / m
+            gradients[f"db{l}"] = np.mean(dZ, axis=1, keepdims=True)
+            dA_prev = W.T @ dZ
+
+        return gradients
 
     def update_parameters(
         self, grads: Dict[str, np.ndarray], learning_rate: float
