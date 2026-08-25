@@ -7,8 +7,11 @@ Run every test in the project:
     pytest -v
 """
 import numpy as np
+import pytest
 
+from src.losses import categorical_cross_entropy_loss
 from src.model import NeuralNetwork
+from src.utils import one_hot_encode
 
 
 # ---------------------------------------------------------------------------
@@ -176,3 +179,89 @@ def test_forward_is_deterministic():
     (aL2, caches) = nn.forward(x)
 
     np.testing.assert_allclose(aL1, aL2)
+
+
+# ---------------------------------------------------------------------------
+# backward() — gradient coverage and shapes
+# ---------------------------------------------------------------------------
+
+def test_backward_returns_gradients_for_every_layer():
+    """The grads dict must hold dW_l and db_l for every layer 1..L."""
+    layer_dims = [40, 30, 10]
+    nn = NeuralNetwork(layer_dims)
+    m = 12
+    x = np.random.randn(40, m)
+    al, caches = nn.forward(x)
+    y = one_hot_encode(np.random.randint(0, 10, size=m), 10)
+
+    grads = nn.backward(al, y, caches)
+
+    for l in range(1, len(layer_dims)):
+        assert "dW" + str(l) in grads
+        assert "db" + str(l) in grads
+
+
+def test_backward_gradient_shapes_match_parameters():
+    """Every gradient must have the exact shape of the parameter it updates."""
+    layer_dims = [40, 30, 10]
+    nn = NeuralNetwork(layer_dims)
+    m = 12
+    x = np.random.randn(40, m)
+    al, caches = nn.forward(x)
+    y = one_hot_encode(np.random.randint(0, 10, size=m), 10)
+
+    grads = nn.backward(al, y, caches)
+
+    for l in range(1, len(layer_dims)):
+        assert grads["dW" + str(l)].shape == nn.parameters["W" + str(l)].shape
+        assert grads["db" + str(l)].shape == nn.parameters["b" + str(l)].shape
+
+
+# ---------------------------------------------------------------------------
+# compute_cost() / update_parameters() / predict()
+# ---------------------------------------------------------------------------
+
+def test_compute_cost_is_the_mean_of_the_batch_losses():
+    """compute_cost must return one scalar: the average per-sample loss."""
+    layer_dims = [4, 3, 10]
+    nn = NeuralNetwork(layer_dims)
+    m = 5
+    x = np.random.randn(4, m)
+    al, _ = nn.forward(x)
+    y = one_hot_encode(np.random.randint(0, 10, size=m), 10)
+
+    actual = nn.compute_cost(al, y)
+    expected = np.mean(categorical_cross_entropy_loss(al, y))
+
+    np.testing.assert_allclose(actual, expected)
+
+@pytest.mark.skip(reason="TODO: implement NeuralNetwork.update_parameters")
+def test_update_parameters_steps_against_the_gradient():
+    """One update must shift every parameter by lr times its gradient."""
+    layer_dims = [4, 3, 10]
+    nn = NeuralNetwork(layer_dims)
+    m = 5
+    x = np.random.randn(4, m)
+    al, caches = nn.forward(x)
+    y = one_hot_encode(np.random.randint(0, 10, size=m), 10)
+    grads = nn.backward(al, y, caches)
+
+    before = {k: v.copy() for k, v in nn.parameters.items()}
+    nn.update_parameters(grads, learning_rate=0.1)
+
+    # TODO: assert that for every layer, W_new == W_old - lr * dW and
+    # b_new == b_old - lr * db (mutated in place, nothing returned).
+    pass
+
+
+@pytest.mark.skip(reason="TODO: implement NeuralNetwork.predict")
+def test_predict_returns_integer_labels_of_shape_m():
+    """predict must return one integer class label per sample, shape (m,)."""
+    layer_dims = [4, 3, 10]
+    nn = NeuralNetwork(layer_dims)
+    m = 5
+    x = np.random.randn(4, m)
+
+    # TODO: assert preds.shape == (m,), integer dtype, and labels in
+    # range(n_classes) — argmax over the class axis (axis 0).
+    pass
