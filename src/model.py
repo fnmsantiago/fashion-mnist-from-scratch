@@ -103,8 +103,7 @@ class NeuralNetwork:
         Returns:
             The cost, as a scalar.
         """
-        # TODO: implement
-        pass
+        return categorical_cross_entropy_cost(al, y)
 
     def backward(
         self, al: np.ndarray, y: np.ndarray, caches: Dict[int, LayerCache]
