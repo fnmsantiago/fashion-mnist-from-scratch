@@ -6,9 +6,6 @@ from .activations import relu, relu_backward, softmax
 from .losses import categorical_cross_entropy_cost
 from .utils import one_hot_encode, random_mini_batches
 
-
-# A layer's cached values from forward() that backward() needs:
-# the input activations, weight matrix, bias, and pre-activation z.
 class LayerCache(NamedTuple):
     """The operands and output of a layer's activation."""
     a_prev: np.ndarray
@@ -49,8 +46,8 @@ class NeuralNetwork:
 
             he_multiplier = np.sqrt(2/prev_neurons)
 
-            self.parameters[f"W{str(l)}"] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
-            self.parameters[f"b{str(l)}"] = np.zeros((curr_neurons, 1))
+            self.parameters[f"W{l}"] = np.random.randn(curr_neurons, prev_neurons) * he_multiplier
+            self.parameters[f"b{l}"] = np.zeros((curr_neurons, 1))
 
         return self.parameters
 
@@ -64,7 +61,7 @@ class NeuralNetwork:
         Returns:
             A tuple (al, caches) where al is the softmax output of shape
             (n_classes, m) and caches is a dict keyed by layer index 1..L,
-            each value being that layer's (a_prev, W, b, z) tuple for the
+            each value being that layer's a_prev, W, b, and z for the
             values backward() needs.
         """
         # Each layer's cache gets its own entry, keyed by layer index.
@@ -75,11 +72,11 @@ class NeuralNetwork:
         a_prev = x
 
         for l in range(1, self.num_layers + 1):
-            W = self.parameters[f"W{str(l)}"]
-            b = self.parameters[f"b{str(l)}"]
+            W = self.parameters[f"W{l}"]
+            b = self.parameters[f"b{l}"]
 
             # Pre-activation
-            z = np.dot(W, a_prev) + b
+            z = W @ a_prev + b
 
             # Activation
             if l == self.num_layers:
@@ -134,8 +131,8 @@ class NeuralNetwork:
 
         error_signal = al - y
 
-        gradients[f"dW{self.num_layers}"] = (dZ @ cache.a_prev.T) / m
-        gradients[f"db{self.num_layers}"] = np.mean(dZ, axis=1, keepdims=True)
+        gradients[f"dW{self.num_layers}"] = (error_signal @ cache.a_prev.T) / m
+        gradients[f"db{self.num_layers}"] = np.mean(error_signal, axis=1, keepdims=True)
         dA_prev = cache.W.T @ error_signal
 
         # Hidden layers L-1..1: uniform linear -> relu backward.
