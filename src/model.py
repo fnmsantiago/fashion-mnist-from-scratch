@@ -156,8 +156,11 @@ class NeuralNetwork:
             grads: Gradients produced by backward().
             learning_rate: Step size for the update.
         """
-        # TODO: implement
-        pass
+        for (parameter, _) in self.parameters.items():
+            # sample parameter name is "W1".
+            # sample gradient key is "dW1".
+
+            self.parameters[parameter] -= learning_rate * grads[f"d{parameter}"]
 
     def predict(self, x: np.ndarray) -> np.ndarray:
         """Predicts class labels for a batch of inputs.
