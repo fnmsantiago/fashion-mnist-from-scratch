@@ -28,7 +28,10 @@ def load_fashion_mnist(
         have shape (784, m) with pixel values scaled to [0, 1], and y_train
         and y_test have shape (m,) with integer labels 0-9.
     """
-    x, y = fetch_openml('Fashion-MNIST', version=1, return_X_y=True, as_frame=False)
+    x, y = fetch_openml(
+        'Fashion-MNIST', version=1, return_X_y=True, as_frame=False,
+        parser='liac-arff',
+    )
     x = x / 255.0
     y = y.astype(int)
 
