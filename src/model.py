@@ -171,8 +171,9 @@ class NeuralNetwork:
         Returns:
             Predicted integer class labels of shape (m,).
         """
-        # TODO: implement
-        pass
+        aL, _ = self.forward(x)
+
+        return aL.argmax(axis=0)
 
     def train(
         self,

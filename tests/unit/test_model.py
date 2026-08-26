@@ -235,7 +235,6 @@ def test_compute_cost_is_the_mean_of_the_batch_losses():
 
     np.testing.assert_allclose(actual, expected)
 
-@pytest.mark.skip(reason="TODO: implement NeuralNetwork.update_parameters")
 def test_update_parameters_steps_against_the_gradient():
     """One update must shift every parameter by lr times its gradient."""
     layer_dims = [4, 3, 10]
@@ -246,22 +245,32 @@ def test_update_parameters_steps_against_the_gradient():
     y = one_hot_encode(np.random.randint(0, 10, size=m), 10)
     grads = nn.backward(al, y, caches)
 
+    learning_rate = 0.1
     before = {k: v.copy() for k, v in nn.parameters.items()}
-    nn.update_parameters(grads, learning_rate=0.1)
+    nn.update_parameters(grads, learning_rate)
 
-    # TODO: assert that for every layer, W_new == W_old - lr * dW and
-    # b_new == b_old - lr * db (mutated in place, nothing returned).
-    pass
+    for l in range(1, len(layer_dims)):
+        np.testing.assert_allclose(nn.parameters[f"W{l}"], before[f"W{l}"] - learning_rate * grads[f"dW{l}"])
+        np.testing.assert_allclose(nn.parameters[f"b{l}"], before[f"b{l}"] - learning_rate * grads[f"db{l}"])
 
-
-@pytest.mark.skip(reason="TODO: implement NeuralNetwork.predict")
 def test_predict_returns_integer_labels_of_shape_m():
     """predict must return one integer class label per sample, shape (m,)."""
-    layer_dims = [4, 3, 10]
+    n_classes = 10
+    layer_dims = [4, 3, n_classes]
     nn = NeuralNetwork(layer_dims)
     m = 5
     x = np.random.randn(4, m)
 
-    # TODO: assert preds.shape == (m,), integer dtype, and labels in
-    # range(n_classes) — argmax over the class axis (axis 0).
-    pass
+    predictions = nn.predict(x)
+
+    assert predictions.shape == (m,)
+
+    # the predictions must be integers
+    assert predictions.dtype.kind == "i"
+
+    aL, _ = nn.forward(x)
+
+    np.testing.assert_array_equal(predictions, aL.argmax(axis=0))
+
+    assert (predictions >= 0).all()
+    assert (predictions < n_classes).all()
