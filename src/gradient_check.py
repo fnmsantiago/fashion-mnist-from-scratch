@@ -1,0 +1,102 @@
+"""Gradient checking for the NeuralNetwork.
+
+Compares the analytic gradients produced by ``backward()`` against numeric
+gradients computed by central finite differences of the cost. If the
+backpropagation math is correct, the max relative error on a small network
+should be on the order of 1e-7.
+"""
+from typing import Dict
+
+import numpy as np
+
+from .model import NeuralNetwork
+
+
+def _cost_with_parameters(
+    network: NeuralNetwork,
+    x: np.ndarray,
+    y: np.ndarray,
+    parameters: Dict[str, np.ndarray],
+) -> float:
+    """Computes the cost that a given parameter set would produce.
+
+    forward() and compute_cost() read ``self.parameters``, so evaluating an
+    alternate parameter set requires swapping it in temporarily. A
+    try/finally guarantees the network's real parameters are restored even
+    if the forward pass raises.
+
+    Args:
+        network: The network to evaluate.
+        x: Input data of shape (n_x, m).
+        y: One-hot labels of shape (n_classes, m).
+        parameters: The parameter dict to evaluate.
+
+    Returns:
+        The scalar cost for that parameter set.
+    """
+    saved_parameters = network.parameters
+
+    # replace the current network's parameters with the one to evaluate.
+    network.parameters = parameters
+
+    try:
+        al, _ = network.forward(x)
+        return network.compute_cost(al, y)
+    finally:
+        # revert the network's parameters
+        network.parameters = saved_parameters
+
+
+def gradient_check(
+    network: NeuralNetwork,
+    x: np.ndarray,
+    y: np.ndarray,
+    epsilon: float = 1e-7,
+) -> Dict[str, float]:
+    """Compares backward()'s analytic gradients against finite differences.
+
+    For every element of every parameter (weights and biases of all layers),
+    the numeric gradient of the cost is estimated with central differences:
+
+        dJ/dtheta_i ~= (J(theta + eps) - J(theta - eps)) / (2 * eps)
+
+    and compared with backward()'s analytic gradient via the relative error:
+
+        |analytic - numeric| / max(1e-8, |analytic|, |numeric|)
+
+    A correct implementation yields max relative errors around 1e-7.
+
+    Args:
+        network: The network to check.
+        x: Input data of shape (n_x, m).
+        y: One-hot labels of shape (n_classes, m).
+        epsilon: Perturbation size for the finite difference.
+
+    Returns:
+        A dict mapping each parameter key ('W1', 'b1', ...) to the max
+        relative error over that parameter's elements.
+    """
+    # 1. Analytic gradients from one forward + backward pass.
+    al, caches = network.forward(x)
+    analytic = network.backward(al, y, caches)
+
+    errors: Dict[str, float] = {}
+
+    # 2. Numeric gradients and comparison, one parameter at a time.
+    for key, param in network.parameters.items():
+        # TODO: implement
+        #
+        # Hint: for each element index of `param`:
+        #   - Build copies of the parameters with only that element shifted:
+        #       plus  = {k: v.copy() for k, v in network.parameters.items()}
+        #       plus[key][index] += epsilon
+        #       minus = {k: v.copy() for k, v in network.parameters.items()}
+        #       minus[key][index] -= epsilon
+        #   - numeric = (_cost_with_parameters(network, x, y, plus)
+        #                - _cost_with_parameters(network, x, y, minus)) / (2 * epsilon)
+        #   - Compare numeric against analytic[key] at the same index with
+        #     the relative-error formula above.
+        # errors[key] should hold the max relative error over the parameter.
+        errors[key] = np.float64(0.0)
+
+    return errors
