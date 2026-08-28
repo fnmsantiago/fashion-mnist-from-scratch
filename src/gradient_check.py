@@ -1,9 +1,7 @@
 """Gradient checking for the NeuralNetwork.
 
-Compares the analytic gradients produced by ``backward()`` against numeric
-gradients computed by central finite differences of the cost. If the
-backpropagation math is correct, the max relative error on a small network
-should be on the order of 1e-7.
+Verifies that the analytic gradients produced by ``backward()`` agree with
+numeric gradients of the cost estimated by perturbing the parameters.
 """
 from typing import Dict
 
@@ -53,28 +51,22 @@ def gradient_check(
     y: np.ndarray,
     epsilon: float = 1e-7,
 ) -> Dict[str, float]:
-    """Compares backward()'s analytic gradients against finite differences.
+    """Compares backward()'s analytic gradients against numeric ones.
 
-    For every element of every parameter (weights and biases of all layers),
-    the numeric gradient of the cost is estimated with central differences:
-
-        dJ/dtheta_i ~= (J(theta + eps) - J(theta - eps)) / (2 * eps)
-
-    and compared with backward()'s analytic gradient via the relative error:
-
-        |analytic - numeric| / max(1e-8, |analytic|, |numeric|)
-
-    A correct implementation yields max relative errors around 1e-7.
+    Numeric gradients of the cost are estimated by perturbing each
+    parameter; the comparison with backward()'s gradients uses a
+    relative-error measure. The returned dict reports one error per
+    parameter.
 
     Args:
         network: The network to check.
         x: Input data of shape (n_x, m).
         y: One-hot labels of shape (n_classes, m).
-        epsilon: Perturbation size for the finite difference.
+        epsilon: Perturbation size used for the finite difference.
 
     Returns:
-        A dict mapping each parameter key ('W1', 'b1', ...) to the max
-        relative error over that parameter's elements.
+        A dict mapping each parameter key ('W1', 'b1', ...) to an error
+        measure for that parameter.
     """
     # 1. Analytic gradients from one forward + backward pass.
     al, caches = network.forward(x)
@@ -83,20 +75,8 @@ def gradient_check(
     errors: Dict[str, float] = {}
 
     # 2. Numeric gradients and comparison, one parameter at a time.
+    # TODO: implement — apply the gradient-checking technique from the course.
     for key, param in network.parameters.items():
-        # TODO: implement
-        #
-        # Hint: for each element index of `param`:
-        #   - Build copies of the parameters with only that element shifted:
-        #       plus  = {k: v.copy() for k, v in network.parameters.items()}
-        #       plus[key][index] += epsilon
-        #       minus = {k: v.copy() for k, v in network.parameters.items()}
-        #       minus[key][index] -= epsilon
-        #   - numeric = (_cost_with_parameters(network, x, y, plus)
-        #                - _cost_with_parameters(network, x, y, minus)) / (2 * epsilon)
-        #   - Compare numeric against analytic[key] at the same index with
-        #     the relative-error formula above.
-        # errors[key] should hold the max relative error over the parameter.
         errors[key] = np.float64(0.0)
 
     return errors
