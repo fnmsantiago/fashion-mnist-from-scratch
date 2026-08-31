@@ -3,7 +3,7 @@
 Verifies that the analytic gradients produced by ``backward()`` agree with
 numeric gradients of the cost estimated by perturbing the parameters.
 """
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 
@@ -50,7 +50,7 @@ def gradient_check(
     x: np.ndarray,
     y: np.ndarray,
     epsilon: float = 1e-7,
-) -> Dict[str, float]:
+) -> Tuple[float, Dict[str, float]]:
     """Compares backward()'s analytic gradients against numeric ones.
 
     Numeric gradients of the cost are estimated by perturbing each
@@ -65,7 +65,8 @@ def gradient_check(
         epsilon: Perturbation size used for the finite difference.
 
     Returns:
-        A dict mapping each parameter key ('W1', 'b1', ...) to an error
+        A tuple that contains the Euclidean distance between the gradients and its approximation
+        and the dict mapping each parameter key ('W1', 'b1', ...) to an error
         measure for that parameter.
     """
     # 1. Analytic gradients from one forward + backward pass.
@@ -74,9 +75,58 @@ def gradient_check(
 
     errors: Dict[str, float] = {}
 
-    # 2. Numeric gradients and comparison, one parameter at a time.
-    # TODO: implement — apply the gradient-checking technique from the course.
-    for key, param in network.parameters.items():
-        errors[key] = np.float64(0.0)
+    approximates = {}
 
-    return errors
+    # 2. Numeric gradients and comparison, one parameter at a time.
+    for theta_name, theta in network.parameters.items():
+        # Pluck the gradient of the parameter.
+        grad = analytic[f"d{theta_name}"]
+
+        grad_approx = np.zeros_like(grad)
+
+        # Loop through each element of theta.
+        for i in range(theta.shape[0]):
+            for j in range(theta.shape[1]):
+                # Copy the theta first to avoid mutating the original.
+                plus = theta.copy()
+                minus = theta.copy()
+
+                # Add/subtract epsilon to the element.
+                plus[i, j] += epsilon
+                minus[i, j] -= epsilon
+
+                # Copy the entire dictionary of parameters.
+                plus_params = network.parameters.copy()
+                minus_params = network.parameters.copy()
+
+                # Replace the parameter with the modified one.
+                plus_params[theta_name] = plus
+                minus_params[theta_name] = minus
+            
+                # Compute the cost as a result of the addition/subtraction.
+                J_plus = _cost_with_parameters(network, x, y, plus_params)
+                J_minus = _cost_with_parameters(network, x, y, minus_params)
+
+                # Note the approximate gradient using the definition of a derivative.
+                grad_approx[i, j] = (J_plus - J_minus)/(2*epsilon)
+    
+        # Identify the "distance" of what you got v.s. what should be.
+        errors[theta_name] = np.linalg.norm(grad - grad_approx)/(np.linalg.norm(grad) + np.linalg.norm(grad_approx))
+
+        # Note the approximate gradient for theta.
+        approximates[theta_name] = grad_approx
+
+    # The elements of analytic and approximates have different shapes.
+    # In order to take advantage of vectorization, we need to reshape them.
+    # Flattening them should do.
+    analytic_flattened = [a.reshape(-1) for a in analytic.values()]
+    approximates_flattened = [v.reshape(-1) for v in approximates.values()]
+
+    # Given your list of 1D arrays, concatenate them to form a true NumPy array.
+    grad_arr = np.concatenate(analytic_flattened)
+    grad_approx_arr = np.concatenate(approximates_flattened)
+
+    # compute the "distance" for the entire network
+    network_error = np.linalg.norm(grad_arr - grad_approx_arr) / (np.linalg.norm(grad_arr) + np.linalg.norm(grad_approx_arr))
+
+    return (network_error, errors)
