@@ -114,13 +114,17 @@ def gradient_check(
         errors[theta_name] = np.linalg.norm(grad - grad_approx)/(np.linalg.norm(grad) + np.linalg.norm(grad_approx))
 
         # Note the approximate gradient for theta.
-        approximates[theta_name] = grad_approx
+        approximates[f"d{theta_name}"] = grad_approx
 
     # The elements of analytic and approximates have different shapes.
     # In order to take advantage of vectorization, we need to reshape them.
     # Flattening them should do.
     analytic_flattened = [a.reshape(-1) for a in analytic.values()]
-    approximates_flattened = [v.reshape(-1) for v in approximates.values()]
+
+    # The analytic order starts from the last layer,
+    # whereas approximates starts from the 1st layer.
+    # Fix this discrepancy by looping using analytic's order then use the keys to pluck from the approximates. 
+    approximates_flattened = [approximates[theta_name].reshape(-1) for theta_name in analytic.keys()]
 
     # Given your list of 1D arrays, concatenate them to form a true NumPy array.
     grad_arr = np.concatenate(analytic_flattened)
