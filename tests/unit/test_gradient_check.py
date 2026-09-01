@@ -20,7 +20,6 @@ from src.utils import one_hot_encode
 # Learning goals: implement src/gradient_check.py, then un-skip each test
 # (remove the @pytest.mark.skip decorator) and fill in the assertion.
 
-@pytest.mark.skip(reason="TODO: implement src/gradient_check.py")
 def test_gradient_check_reports_small_errors_for_correct_backward():
     """Correct backpropagation must yield a tiny max relative error."""
     np.random.seed(0)
@@ -29,12 +28,15 @@ def test_gradient_check_reports_small_errors_for_correct_backward():
     x = np.random.randn(4, m)
     y = one_hot_encode(np.random.randint(0, 3, size=m), 3)
 
-    # TODO: call gradient_check(network, x, y) and assert every reported
-    # error is small — recall the course's gradient-checking threshold.
-    pass
+    network_error, errors = gradient_check(network, x, y)
 
+    very_small_number = 10e-7
 
-@pytest.mark.skip(reason="TODO: implement src/gradient_check.py")
+    assert network_error <= very_small_number
+
+    for error in errors.values():
+        assert error <= very_small_number
+
 def test_gradient_check_flags_a_broken_gradient():
     """A deliberately wrong gradient must produce a large reported error."""
     np.random.seed(0)
@@ -43,13 +45,32 @@ def test_gradient_check_flags_a_broken_gradient():
     x = np.random.randn(4, m)
     y = one_hot_encode(np.random.randint(0, 3, size=m), 3)
 
-    # TODO: make backward() return wrong gradients somehow, then assert
-    # gradient_check reports large errors — the checker must be able to
-    # detect a bug instead of always passing.
-    pass
+    real_backward = network.backward
+
+    def broken_backward(al, y, caches):
+        grads = real_backward(al, y, caches)
+
+        # corrupt the weight gradient of the first layer.
+        grads[f"dW1"] += 12.34
+
+        return grads
+
+    # Use Python's feature to shadow an instance's function. 
+    network.backward = broken_backward
+
+    network_error, errors = gradient_check(network, x, y)
+
+    very_small_number = 10e-7
+
+    assert network_error > very_small_number
+
+    for theta_name, error in errors.items():
+        if theta_name == "W1":
+            assert error > 10e-7
+        else:
+            assert error <= 10e-7
 
 
-@pytest.mark.skip(reason="TODO: implement src/gradient_check.py")
 def test_gradient_check_reports_one_error_per_parameter():
     """The result must map every parameter key to a non-negative float."""
     np.random.seed(0)
@@ -58,6 +79,11 @@ def test_gradient_check_reports_one_error_per_parameter():
     x = np.random.randn(4, m)
     y = one_hot_encode(np.random.randint(0, 3, size=m), 3)
 
-    # TODO: assert set(errors.keys()) == set(network.parameters.keys()) and
-    # that every reported value is a non-negative float.
-    pass
+    network_error, errors = gradient_check(network, x, y)
+
+    assert set(errors.keys()) == set(network.parameters.keys())
+
+    assert network_error > 0.0
+
+    for error in errors.values():
+        assert error > 0.0
