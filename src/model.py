@@ -177,8 +177,11 @@ class NeuralNetwork:
 
     def train(
         self,
-        x: np.ndarray,
-        y_int: np.ndarray,
+        x_train: np.ndarray,
+        y_train: np.ndarray,
+        x_val: np.ndarray,
+        y_val: np.ndarray,
+        patience: int,
         n_classes: int,
         epochs: int = 30,
         batch_size: int = 64,
@@ -188,8 +191,11 @@ class NeuralNetwork:
         """Trains the network with mini-batch gradient descent.
 
         Args:
-            x: Input data of shape (n_x, m).
-            y_int: Integer labels of shape (m,), not one-hot encoded.
+            x_train: Input data of shape (n_x, train_size).
+            y_train: Integer labels of shape (val_size,), not one-hot encoded.
+            x_val: The validation data set of shape (n_x, val_size).
+            y_val: Integer labels of shape (val_size,), not one-hot encoded.
+            patience: The number of epochs that determines early stopping.
             n_classes: Number of classes.
             epochs: Number of passes over the full training set.
             batch_size: Number of examples per mini-batch.
@@ -199,11 +205,20 @@ class NeuralNetwork:
         Returns:
             The cost after each epoch, for plotting.
         """
-        y = one_hot_encode(y_int, n_classes)
+        y = one_hot_encode(y_train, n_classes)
         costs = []
 
+        # Record of the lowest validation cost.
+        min_val_cost = float('inf')
+
+        # Copy of the parameters that produced the lowest validation cost.
+        best_parameters = {}
+
+        # The number of epochs since the last seen improvement.
+        epoch_since_improvement = 0
+
         for epoch in range(epochs):
-            mini_batches = random_mini_batches(x, y, batch_size, seed=epoch)
+            mini_batches = random_mini_batches(x_train, y, batch_size, seed=epoch)
             epoch_cost = 0.0
 
             for x_batch, y_batch in mini_batches:
@@ -212,9 +227,28 @@ class NeuralNetwork:
                 grads = self.backward(al, y_batch, caches)
                 self.update_parameters(grads, learning_rate)
 
-            epoch_cost /= x.shape[1]
+            epoch_cost /= x_train.shape[1]
             costs.append(epoch_cost)
             if print_cost and epoch % 5 == 0:
                 print(f"Epoch {epoch}: cost = {epoch_cost:.4f}")
+
+            # After each epoch, determine performance on the validation set.
+            al, caches = self.forward(x_val)
+            val_cost = self.compute_cost(al, y_val)
+
+            if val_cost < min_val_cost:
+                min_val_cost = val_cost
+
+                best_parameters = {k:v.copy() for k, v in self.parameters.items()}
+                epoch_since_improvement = 0
+            else:
+                epoch_since_improvement += 1
+
+            # If patience is exhausted, stop early.
+            if epoch_since_improvement >= patience:
+                break
+
+        # Restore the best parameters.
+        self.parameters = best_parameters
 
         return costs
