@@ -38,6 +38,7 @@ def load_fashion_mnist(
     x_train, x_test, y_train, y_test = train_test_split(
         x, y, test_size=test_size, stratify=y, random_state=random_state
     )
+    # sklearn splits rows; we keep samples as columns, so transpose back.
     return x_train.T, x_test.T, y_train, y_test
 
 
@@ -131,3 +132,33 @@ def random_mini_batches(
         mini_batches.append(mini_batch)
 
     return mini_batches
+
+
+def train_val_split(
+    x_train: np.ndarray,
+    y_train: np.ndarray,
+    val_size: int = 10000,
+    random_state: int = 42,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Carves a stratified validation set out of the training data.
+
+    Args:
+        x_train: Training inputs of shape (n_x, train_size).
+        y_train: Training labels of shape (train_size,).
+        val_size: Number of examples to hold out for validation.
+        random_state: Seed for the split.
+
+    Returns:
+        A tuple (x_train, x_val, y_train, y_val) where x_train and x_val
+        have shape (n_x, m) and y_train and y_val have shape (m,).
+    """
+    # sklearn splits along rows (samples as rows), but this project keeps
+    # samples as columns (n_x, m) — so transpose in, split, transpose back.
+    # Revert x_train back to a shape sklearn recognizes: (train_size, n_x).
+    x_train, x_val, y_train, y_val = train_test_split(
+        x_train.T, y_train, test_size=val_size, stratify=y_train,
+        random_state=random_state,
+    )
+
+    # Revert x_train back to what the project recognizes: (n_x, train_size).
+    return x_train.T, x_val.T, y_train, y_val
