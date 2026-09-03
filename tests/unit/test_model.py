@@ -274,3 +274,60 @@ def test_predict_returns_integer_labels_of_shape_m():
 
     assert (predictions >= 0).all()
     assert (predictions < n_classes).all()
+
+# ---------------------------------------------------------------------------
+# train() — early stopping
+# ---------------------------------------------------------------------------
+# train() is an integration point, so these tests only pin the behavior
+# that's new and subtle: early stopping. (Its pieces — forward, cost,
+# backward, update — are tested elsewhere.)
+
+def test_train_leaves_parameters_intact():
+    """train() must leave the network with a full, usable parameter dict."""
+    np.random.seed(0)
+    network = NeuralNetwork([5, 8, 3])
+    m = 200
+    x_train = np.random.randn(5, m)
+    y_train = np.random.randint(0, 3, size=m)
+    x_val = np.random.randn(5, 40)
+    y_val = np.random.randint(0, 3, size=40)
+
+    network.train(x_train, y_train, x_val, y_val, n_classes=3, patience=4,
+                  epochs=10, batch_size=16, learning_rate=0.1, print_cost=False)
+
+    for l in range(1, len(network.layer_dims)):
+        assert f"W{l}" in network.parameters
+        assert f"b{l}" in network.parameters
+
+def test_train_stops_early_when_validation_cost_plateaus():
+    """Training must stop before the epoch cap when val cost stops improving."""
+    np.random.seed(0)
+    network = NeuralNetwork([5, 8, 3])
+    m = 200
+    x_train = np.random.randn(5, m)
+    y_train = np.random.randint(0, 3, size=m)
+    x_val = np.random.randn(5, 40)
+    y_val = np.random.randint(0, 3, size=40)
+
+    epochs = 60
+    costs = network.train(x_train, y_train, x_val, y_val, n_classes=3,
+                          patience=4, epochs=epochs, batch_size=16,
+                          learning_rate=0.3, print_cost=False)
+
+    assert len(costs) < epochs
+
+def test_train_reduces_training_cost():
+    """Training must move the model downhill: final cost < starting cost."""
+    np.random.seed(0)
+    network = NeuralNetwork([5, 8, 3])
+    m = 200
+    x_train = np.random.randn(5, m)
+    y_train = np.random.randint(0, 3, size=m)
+    x_val = np.random.randn(5, 40)
+    y_val = np.random.randint(0, 3, size=40)
+
+    costs = network.train(x_train, y_train, x_val, y_val, n_classes=3,
+                          patience=4, epochs=10, batch_size=16,
+                          learning_rate=0.3, print_cost=False)
+
+    assert costs[-1] < costs[0]
