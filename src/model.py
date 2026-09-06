@@ -192,7 +192,7 @@ class NeuralNetwork:
 
         Args:
             x_train: Input data of shape (n_x, train_size).
-            y_train: Integer labels of shape (val_size,), not one-hot encoded.
+            y_train: Integer labels of shape (train_size,), not one-hot encoded.
             x_val: The validation data set of shape (n_x, val_size).
             y_val: Integer labels of shape (val_size,), not one-hot encoded.
             patience: The number of epochs that determines early stopping.
@@ -206,6 +206,7 @@ class NeuralNetwork:
             The cost after each epoch, for plotting.
         """
         y = one_hot_encode(y_train, n_classes)
+        y_val_one_hot = one_hot_encode(y_val, n_classes)
         costs = []
 
         # Record of the lowest validation cost.
@@ -233,8 +234,8 @@ class NeuralNetwork:
                 print(f"Epoch {epoch}: cost = {epoch_cost:.4f}")
 
             # After each epoch, determine performance on the validation set.
-            al, caches = self.forward(x_val)
-            val_cost = self.compute_cost(al, y_val)
+            al_val, _ = self.forward(x_val)
+            val_cost = self.compute_cost(al_val, y_val_one_hot)
 
             if val_cost < min_val_cost:
                 min_val_cost = val_cost
