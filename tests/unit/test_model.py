@@ -309,12 +309,19 @@ def test_train_stops_early_when_validation_cost_plateaus():
     x_val = np.random.randn(5, 40)
     y_val = np.random.randint(0, 3, size=40)
 
+    patience = 4
     epochs = 60
-    costs = network.train(x_train, y_train, x_val, y_val, n_classes=3,
-                          patience=4, epochs=epochs, batch_size=16,
+    train_costs, val_costs = network.train(x_train, y_train, x_val, y_val, n_classes=3,
+                          patience=patience, epochs=epochs, batch_size=16,
                           learning_rate=0.3, print_cost=False)
 
-    assert len(costs) < epochs
+    assert len(train_costs) < epochs
+
+    min_val_cost = min(val_costs)
+
+    # Ensure the last set of validation costs that exhausted the patience are greater than or equal to the min.
+    for i in range(-1, -patience, -1):
+        assert val_costs[i] >= min_val_cost
 
 def test_train_reduces_training_cost():
     """Training must move the model downhill: final cost < starting cost."""
@@ -326,8 +333,8 @@ def test_train_reduces_training_cost():
     x_val = np.random.randn(5, 40)
     y_val = np.random.randint(0, 3, size=40)
 
-    costs = network.train(x_train, y_train, x_val, y_val, n_classes=3,
+    train_costs, _ = network.train(x_train, y_train, x_val, y_val, n_classes=3,
                           patience=4, epochs=10, batch_size=16,
                           learning_rate=0.3, print_cost=False)
 
-    assert costs[-1] < costs[0]
+    assert train_costs[-1] < train_costs[0]

@@ -187,7 +187,7 @@ class NeuralNetwork:
         batch_size: int = 64,
         learning_rate: float = 0.1,
         print_cost: bool = True,
-    ) -> List[float]:
+    ) -> Tuple[List[float], List[float]]:
         """Trains the network with mini-batch gradient descent.
 
         Args:
@@ -203,11 +203,12 @@ class NeuralNetwork:
             print_cost: Whether to print the cost periodically.
 
         Returns:
-            The cost after each epoch, for plotting.
+            A tuple (train_costs, val_costs) that contains one entry per epoch.
         """
         y = one_hot_encode(y_train, n_classes)
         y_val_one_hot = one_hot_encode(y_val, n_classes)
-        costs = []
+        train_costs = []
+        val_costs = []
 
         # Record of the lowest validation cost.
         min_val_cost = float('inf')
@@ -229,13 +230,16 @@ class NeuralNetwork:
                 self.update_parameters(grads, learning_rate)
 
             epoch_cost /= x_train.shape[1]
-            costs.append(epoch_cost)
+            train_costs.append(epoch_cost)
+
             if print_cost and epoch % 5 == 0:
                 print(f"Epoch {epoch}: cost = {epoch_cost:.4f}")
 
             # After each epoch, determine performance on the validation set.
             al_val, _ = self.forward(x_val)
             val_cost = self.compute_cost(al_val, y_val_one_hot)
+
+            val_costs.append(val_cost)
 
             if val_cost < min_val_cost:
                 min_val_cost = val_cost
@@ -252,4 +256,4 @@ class NeuralNetwork:
         # Restore the best parameters.
         self.parameters = best_parameters
 
-        return costs
+        return (train_costs, val_costs)
