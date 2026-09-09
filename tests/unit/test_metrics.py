@@ -76,7 +76,6 @@ def test_confusion_matrix_rows_sum_to_true_class_counts():
 # precision_recall() — per-class precision and recall
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skip(reason="TODO: implement src/metrics.py")
 def test_precision_and_recall_known_case():
     """The worked teaching example: precision 0.8, recall 2/3 for class 0."""
     # 30 samples of class 0, 70 of class 1.
@@ -84,14 +83,22 @@ def test_precision_and_recall_known_case():
     # and 10 real class-0 samples are missed (FN).
     y_true = np.array([0] * 30 + [1] * 70)
     y_pred = np.array([0] * 20 + [1] * 10 + [0] * 5 + [1] * 65)
+    n_classes = 2
 
-    precision, recall = precision_recall(y_true, y_pred, n_classes=2)
+    precision, recall = precision_recall(y_true, y_pred, n_classes=n_classes)
 
-    # TODO: assert precision[0] == 0.8 and recall[0] == 2/3.
-    pass
+    expected_precision = np.zeros((n_classes))
+    expected_recall = np.zeros_like(expected_precision)
+
+    expected_precision[0] = 20/25
+    expected_precision[1] = 65/75
+    expected_recall[0] = 20/30
+    expected_recall[1] = 65/70
+
+    np.testing.assert_allclose(expected_precision, precision)
+    np.testing.assert_allclose(expected_recall, recall)
 
 
-@pytest.mark.skip(reason="TODO: implement src/metrics.py")
 def test_perfect_predictions_give_perfect_scores():
     """Perfect predictions must give precision and recall of 1.0 for all."""
     np.random.seed(0)
@@ -101,5 +108,8 @@ def test_perfect_predictions_give_perfect_scores():
 
     precision, recall = precision_recall(y, y, n_classes)
 
-    # TODO: assert precision and recall are all exactly 1.0.
-    pass
+    expected_precision = np.ones((n_classes))
+    expected_recall = np.ones_like(expected_precision)
+
+    np.testing.assert_allclose(expected_precision, precision)
+    np.testing.assert_allclose(expected_recall, recall)
