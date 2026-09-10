@@ -49,5 +49,11 @@ def precision_recall(
         Two arrays of shape (n_classes,): precision[c] and recall[c], where
         class c is treated as the positive class and all others as negative.
     """
-    # TODO: implement
-    pass
+    matrix = confusion_matrix(y_true, y_pred, n_classes)
+
+    true_positives = matrix.diagonal()
+
+    precision = true_positives / matrix.sum(axis=0)
+    recall = true_positives / matrix.sum(axis=1)
+
+    return (precision, recall)
