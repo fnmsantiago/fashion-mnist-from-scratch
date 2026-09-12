@@ -53,7 +53,17 @@ def precision_recall(
 
     true_positives = matrix.diagonal()
 
-    precision = true_positives / matrix.sum(axis=0)
-    recall = true_positives / matrix.sum(axis=1)
+    # TP + FP
+    col_sums = matrix.sum(axis=0)
+
+    # TP + FN
+    row_sums = matrix.sum(axis=1)
+
+    precision = np.zeros((n_classes))
+    recall = np.zeros((n_classes))
+
+    # Safely perform division, ignoring elements that divides by zero.
+    np.divide(true_positives, col_sums, out=precision, where=col_sums != 0)
+    np.divide(true_positives, row_sums, out=recall, where=row_sums != 0)
 
     return (precision, recall)

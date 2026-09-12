@@ -113,3 +113,36 @@ def test_perfect_predictions_give_perfect_scores():
 
     np.testing.assert_allclose(expected_precision, precision)
     np.testing.assert_allclose(expected_recall, recall)
+
+
+# ---------------------------------------------------------------------------
+# precision_recall() — the 0/0 edge case
+# ---------------------------------------------------------------------------
+# These pin the chosen behavior for classes with no true samples or no
+# predictions: the metric must be 0.0, never NaN.
+
+def test_class_never_predicted_gets_zero_precision():
+    """A class the model never predicts must report precision 0.0, not NaN."""
+    # Both classes exist in y_true, but the model only ever outputs class 0.
+    y_true = np.array([0, 0, 0, 1, 1, 1])
+    y_pred = np.array([0, 0, 0, 0, 0, 0])
+    n_classes = 2
+
+    precision, recall = precision_recall(y_true, y_pred, n_classes=n_classes)
+
+    # Class 1 doesn't get predicted at all, thus attempting zero division.
+    # Ensure it outputs 0.0 rather than NaN.
+    assert precision[1] == 0.0
+
+
+def test_absent_class_gets_zero_precision_and_recall():
+    """A class missing entirely from the data must report 0.0, not NaN."""
+    # Class 2 never appears in y_true and is never predicted.
+    y_true = np.array([0, 1, 1, 0])
+    y_pred = np.array([0, 1, 1, 0])
+    n_classes = 3
+
+    precision, recall = precision_recall(y_true, y_pred, n_classes=n_classes)
+
+    assert precision[2] == 0.0
+    assert recall[2] == 0.0
