@@ -4,3 +4,6 @@ scikit-learn
 jupyter
 ipykernel
 pytest
+# Phase 3 comparison. CPU-only install:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch
