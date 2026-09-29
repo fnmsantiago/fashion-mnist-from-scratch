@@ -20,13 +20,14 @@ Other notable features:
 
 ## Results
 
-<!-- Subtask 3: fill in from results/from_scratch.json and results/pytorch.json -->
+|                        | from scratch (NumPy) | PyTorch  |
+|------------------------|----------------------|----------|
+| Test accuracy          | 86.54%               | 86.94%   |
+| Epochs (early stopped) | 10                   | 11       |
+| Training time (CPU)    | 6.89 sec             | 4.32 sec |
 
-|                        | from scratch (NumPy) | PyTorch |
-|------------------------|----------------------|---------|
-| Test accuracy          |                  86.88%    |   84.78%      |
-| Epochs (early stopped) |                    5  |     6    |
-| Training time (CPU)    |                4.13 sec      |     2.3 sec    |
+Accuracy and epochs are reproducible — every run in both notebooks is seeded.
+Training time is wall-clock and varies slightly with machine load.
 
 
 ## What the errors reveal
