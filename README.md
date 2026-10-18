@@ -24,18 +24,21 @@ Other notable features:
 |------------------------|----------------------|----------|
 | Test accuracy          | 86.54%               | 86.94%   |
 | Epochs (early stopped) | 10                   | 11       |
-| Training time (CPU)    | 6.89 sec             | 4.32 sec |
+| Training time (CPU)    | 5.99 sec             | 4.32 sec |
 
 Accuracy and epochs are reproducible — every run in both notebooks is seeded.
 Training time is wall-clock and varies slightly with machine load.
 
+### Confusion Matrix
+![Confusion matrix (row-normalized)](results/confusion_matrix.png)
+
+### Precision/Recall
+![Precision/Recall](results/precision_recall.png)
 
 ## What the errors reveal
+The bar chart reveals that **Shirts** have the **lowest recall**. Looking at the confusion matrix, we see that recall is low because **Shirts** are confused with: **T-Shirts**, **Pullover**, and **Coats**. **Coats** are the most common mistake. A lot of real **Shirts** are predicted as **Coats**.
 
-<!-- Subtask 4: 2-3 sentences —
-     lowest-recall class, lowest-precision class, the look-alike garment cluster,
-     and what would actually fix it (better features, not more epochs). -->
-
+**Coats** have **high recall**, suggesting that it catches almost all **Coats**. However, it also has **lowest precision** as it misclassifies **Pullovers** and **Shirts** as **Coats**. This aligns with the observations on the previous paragraph.
 
 ## Architecture
 

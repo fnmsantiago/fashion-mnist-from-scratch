@@ -7,7 +7,7 @@
     10
   ],
   "epochs_run": 10,
-  "train_seconds": 6.89,
+  "train_seconds": 5.99,
   "test_accuracy": 0.8654,
   "precision": [
     0.8430173292558614,
