@@ -42,19 +42,33 @@ The bar chart reveals that **Shirts** have the **lowest recall**. Looking at the
 
 ## Architecture
 
-<!-- Subtask 7a: the network and the data convention —
-     layer sizes, ReLU hidden / softmax output, mini-batch GD, samples-as-columns. -->
+A fully-connected network with two hidden layers. The class itself is L-layer
+(it takes a list of layer sizes), though the notebooks use:
+
+```
+784 inputs -> 64 (ReLU) -> 32 (ReLU) -> 10 (softmax)
+```
+
+- **Hidden layers**: ReLU, initialized with He scaling (`sqrt(2 / previous layer size)`)
+- **Output layer**: softmax over the 10 classes, trained with categorical cross-entropy
+- **Training**: mini-batch gradient descent (batch size 64, learning rate 0.1) with early stopping on the validation cost (patience 3)
+- **Gradients**: backpropagation written by hand.
+
+### Data convention
+
+Each sample is placed in a column, so inputs
+are `(n_x, m)` and predictions/labels are `(n_classes, m)`, where: `m` is the number of samples, `n_x` is the number of features of the inputs, `n_classes` is the number of classes to predict. 
+
+The PyTorch twin expects the opposite layout (samples as rows).
+
+This is the only point where the From-Scratch and PyTorch implementation differ in.
 
 
 ## Correctness
-
-<!-- Subtask 7b: how you know the math is right —
-     gradient-checking result (~1e-9) and the number of unit tests. -->
+Gradient-checking was employed to ensure the from-scratch implementation of Backpropagation is correct. Aside from that, numerous unit tests were implemented for robustness.
 
 
 ## Repository layout
-
-<!-- Subtask 5: pre-filled from the current tree; adjust if it drifts. -->
 
 ```
 src/          model, activations, losses, metrics, gradient checking
@@ -75,20 +89,17 @@ pip install -r requirements.txt
 
 ## Running it
 
-<!-- Subtask 6: how to run the tests, then the notebooks in order
-     (select the venv as the kernel). -->
+Run the unit tests from the project root:
 
 ```bash
 pytest
 ```
 
+Then open the notebooks in order, selecting the venv as the kernel:
 
-## Next steps
+1. `notebooks/01_train_from_scratch.ipynb` — trains the NumPy implementation, evaluates it, and writes `results/from_scratch.json`
+2. `notebooks/02_pytorch_comparison.ipynb` — trains the equivalent PyTorch model and compares it against that same JSON
 
-<!-- Subtask 8: two bullets. -->
+The first run downloads Fashion-MNIST through scikit-learn (about a minute); after that it is cached locally.
 
--
--
-
-<!-- Subtask 9: preview with Ctrl+Shift+V in VS Code, then commit. -->
 
